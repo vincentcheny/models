@@ -253,7 +253,8 @@ def main(_):
   else:
     raise ValueError('The distribution strategy type is not supported: %s' %
                      FLAGS.strategy_type)
-  run_bert(strategy, input_meta_data)
+  with tf.device('/cpu:0'):
+    run_bert(strategy, input_meta_data)
 
 
 if __name__ == '__main__':
