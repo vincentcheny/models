@@ -21,6 +21,7 @@ from __future__ import print_function
 import functools
 import json
 import math
+import os
 
 from absl import app
 from absl import flags
@@ -241,6 +242,14 @@ def main(_):
     # Initialize TPU System.
     cluster_resolver = tpu_lib.tpu_initialize(FLAGS.tpu)
     strategy = tf.distribute.experimental.TPUStrategy(cluster_resolver)
+  elif FLAGS.strategy_type == 'multi_worker_mirror':
+      os.environ['TF_CONFIG'] = json.dumps({
+          'cluster': {
+              'worker': ["localhost:2001", "localhost:2002"]
+          },
+          'task': {'type': 'worker', 'index': 0}
+      })
+      strategy = tf.distribute.experimental.MultiWorkerMirroredStrategy()
   else:
     raise ValueError('The distribution strategy type is not supported: %s' %
                      FLAGS.strategy_type)
