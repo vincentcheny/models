@@ -245,7 +245,8 @@ def main(_):
     elif FLAGS.strategy_type == 'multi_worker_mirror':
         os.environ['TF_CONFIG'] = json.dumps({
             'cluster': {
-                'worker': ["b10g4.bigc.dbg.private:2001", "b10g5.bigc.dbg.private:2002"]
+                # 'worker': ["b10g4.bigc.dbg.private:2001", "b10g5.bigc.dbg.private:2002"]
+                'worker': ["localhost:2001", "localhost:2002"]
             },
             'task': {'type': 'worker', 'index': 0}
         })
