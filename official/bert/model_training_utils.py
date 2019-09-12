@@ -36,9 +36,11 @@ _SUMMARY_TXT = 'training_summary.txt'
 _MIN_SUMMARY_STEPS = 1
 
 MAX_MESSAGE_LENGTH = 500 * 1024 * 1024
-channel = grpc.insecure_channel('b10g4.bigc.dbg.private:20001', options=[('grpc.max_send_message_length', MAX_MESSAGE_LENGTH),
-                                                                      ('grpc.max_receive_message_length', MAX_MESSAGE_LENGTH)])
+channel = grpc.insecure_channel('b10g4.bigc.dbg.private:20001',
+                                options=[('grpc.max_send_message_length', MAX_MESSAGE_LENGTH),
+                                         ('grpc.max_receive_message_length', MAX_MESSAGE_LENGTH)])
 stub = transfer_pb2_grpc.TransferStub(channel)
+
 
 def grpc_push(trainable_var):
     global stub
@@ -48,6 +50,7 @@ def grpc_push(trainable_var):
     para_list = pickle.dumps(para_list)
     response = stub.UploadPara(transfer_pb2.UploadRequest(para=para_list))
     # print("push response:", response.message)
+
 
 def grpc_clear(trainable_var):
     for var in trainable_var:
@@ -64,6 +67,7 @@ def grpc_pull(trainable_var):
         tmp = response[i]
         # print(tmp)
         trainable_var[i].assign(tf.convert_to_tensor(tmp, dtype=trainable_var[i].dtype))
+
 
 def _save_checkpoint(checkpoint, model_dir, checkpoint_prefix):
     """Saves model to with provided checkpoint prefix."""
@@ -378,6 +382,7 @@ def run_customized_training_loop(
             current_step = optimizer.iterations.numpy()
             checkpoint_name = 'ctl_step_{step}.ckpt'
 
+            last_step_time = time.time()
             while current_step < total_training_steps:
                 # Training loss/metric are taking average over steps inside micro
                 # training loop. We reset the their values before each round.
@@ -414,6 +419,13 @@ def run_customized_training_loop(
                             training_status += '  %s = %f' % (metric.name, metric_value)
                             tf.summary.scalar(metric.name, metric_value, step=current_step)
                         train_summary_writer.flush()
+                current_step_time = time.time()
+                training_status += ' Estimated End Time: ' + time.strftime('%Y-%m-%d %H:%M:%S',
+                                                                       time.gmtime((current_step_time - last_step_time)
+                                                                                   * (total_training_steps -
+                                                                                      current_step) +
+                                                                                   current_step_time))
+                last_step_time = time.time()
                 logging.info(training_status)
 
                 # Saves model checkpoints and run validation steps at every epoch end.
