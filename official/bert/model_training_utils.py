@@ -33,7 +33,7 @@ from official.utils.misc import distribution_utils
 from official.utils.misc import tpu_lib
 
 _SUMMARY_TXT = 'training_summary.txt'
-_MIN_SUMMARY_STEPS = 10
+_MIN_SUMMARY_STEPS = 1
 
 MAX_MESSAGE_LENGTH = 500 * 1024 * 1024
 channel = grpc.insecure_channel('b10g4.bigc.dbg.private:20001', options=[('grpc.max_send_message_length', MAX_MESSAGE_LENGTH),
