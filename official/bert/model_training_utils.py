@@ -20,12 +20,14 @@ from __future__ import print_function
 
 import json
 import os
+import sys
 
 import grpc
 import transfer_pb2
 import transfer_pb2_grpc
 import pickle
 import time
+from datetime import datetime,timezone,timedelta
 
 from absl import logging
 import tensorflow as tf
@@ -35,12 +37,16 @@ from official.utils.misc import tpu_lib
 _SUMMARY_TXT = 'training_summary.txt'
 _MIN_SUMMARY_STEPS = 1
 
-MAX_MESSAGE_LENGTH = 500 * 1024 * 1024
+MAX_MESSAGE_LENGTH = 500 * 1024 * 1024 * 1024
 channel = grpc.insecure_channel('b10g4.bigc.dbg.private:20001',
                                 options=[('grpc.max_send_message_length', MAX_MESSAGE_LENGTH),
                                          ('grpc.max_receive_message_length', MAX_MESSAGE_LENGTH)])
 stub = transfer_pb2_grpc.TransferStub(channel)
 
+# create the gRPC stub
+# options = [('grpc.max_message_length', 100 * 1024 * 1024)]
+# channel = grpc.insecure_channel(server_url, options = options)
+# stub = prediction_service_pb2_grpc.PredictionServiceStub(channel)
 
 def grpc_push(trainable_var):
     global stub
@@ -382,7 +388,8 @@ def run_customized_training_loop(
             current_step = optimizer.iterations.numpy()
             checkpoint_name = 'ctl_step_{step}.ckpt'
 
-            last_step_time = time.time()
+            # last_step_time = time.time()
+            last_step_time = datetime.utcnow()
             while current_step < total_training_steps:
                 # Training loss/metric are taking average over steps inside micro
                 # training loop. We reset the their values before each round.
@@ -419,13 +426,12 @@ def run_customized_training_loop(
                             training_status += '  %s = %f' % (metric.name, metric_value)
                             tf.summary.scalar(metric.name, metric_value, step=current_step)
                         train_summary_writer.flush()
-                current_step_time = time.time()
-                training_status += ' Estimated End Time: ' + time.strftime('%Y-%m-%d %H:%M:%S',
-                                                                       time.gmtime((current_step_time - last_step_time)
-                                                                                   * (total_training_steps -
-                                                                                      current_step) +
-                                                                                   current_step_time))
-                last_step_time = time.time()
+                # current_step_time = time.time()
+                current_step_time = datetime.utcnow()
+                estimated_time = (current_step_time - last_step_time) * (total_training_steps - current_step) + \
+                                 current_step_time
+                training_status += ' Estimated End Time: ' + str(estimated_time.astimezone(timezone(timedelta(hours=8))))
+                last_step_time = current_step_time
                 logging.info(training_status)
 
                 # Saves model checkpoints and run validation steps at every epoch end.
@@ -436,6 +442,7 @@ def run_customized_training_loop(
                         # MARKS
                         # _save_checkpoint(checkpoint, model_dir,
                         #                  checkpoint_name.format(step=current_step))
+                        logging.info('server parameter size: %d', sys.getsizeof(model.trainable_variables))
                         grpc_push(model.trainable_variables)
                         grpc_clear(model.trainable_variables)
                         start_time = time.time()
@@ -453,6 +460,7 @@ def run_customized_training_loop(
             # MARKS
             # _save_checkpoint(checkpoint, model_dir,
             #                  checkpoint_name.format(step=current_step))
+            logging.info('server parameter size: %d', sys.getsizeof(model.trainable_variables))
             grpc_push(model.trainable_variables)
             grpc_clear(model.trainable_variables)
             start_time = time.time()
