@@ -37,8 +37,10 @@ from official.utils.misc import tpu_lib
 _SUMMARY_TXT = 'training_summary.txt'
 _MIN_SUMMARY_STEPS = 1
 
-MAX_MESSAGE_LENGTH = 500 * 1024 * 1024 * 1024
-channel = grpc.insecure_channel('b10g4.bigc.dbg.private:20001',
+MAX_MESSAGE_LENGTH = 500 * 1024 * 1024
+
+# channel = grpc.insecure_channel('b10g4.bigc.dbg.private:20001',
+channel = grpc.insecure_channel('localhost:20001',
                                 options=[('grpc.max_send_message_length', MAX_MESSAGE_LENGTH),
                                          ('grpc.max_receive_message_length', MAX_MESSAGE_LENGTH)])
 stub = transfer_pb2_grpc.TransferStub(channel)
@@ -375,6 +377,7 @@ def run_customized_training_loop(
                 for callback in custom_callbacks:
                     callback.on_batch_end(batch)
 
+
             # Training loop starts here.
             checkpoint = tf.train.Checkpoint(model=model, optimizer=optimizer)
             latest_checkpoint_file = tf.train.latest_checkpoint(model_dir)
@@ -390,6 +393,8 @@ def run_customized_training_loop(
 
             # last_step_time = time.time()
             last_step_time = datetime.utcnow()
+            print("Start writing graph")
+
             while current_step < total_training_steps:
                 # Training loss/metric are taking average over steps inside micro
                 # training loop. We reset the their values before each round.
@@ -406,6 +411,7 @@ def run_customized_training_loop(
                     # GPU performance bugs are fixed.
                     train_single_step(train_iterator)
                 else:
+
                     # Converts steps to a Tensor to avoid tf.function retracing.
                     train_steps(train_iterator,
                                 tf.convert_to_tensor(steps, dtype=tf.int32))
@@ -416,7 +422,9 @@ def run_customized_training_loop(
                 # Updates training logging.
                 training_status = 'Train Step: %d/%d  / loss = %s' % (
                     current_step, total_training_steps, train_loss)
-
+                if current_step == 3:
+                    print("graph:", tf.compat.v1.get_default_graph())
+                    tf.io.write_graph(tf.compat.v1.get_default_graph(), '/mnt/d/GitRepository', 'graph.pdtxt')
                 if train_summary_writer:
                     with train_summary_writer.as_default():
                         tf.summary.scalar(

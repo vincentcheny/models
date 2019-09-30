@@ -1,0 +1,18 @@
+TensorFlow 2.0 Upgrade Script
+-----------------------------
+Converted 1 files
+Detected 0 issues that require attention
+--------------------------------------------------------------------------------
+================================================================================
+Detailed log follows:
+
+================================================================================
+--------------------------------------------------------------------------------
+Processing file '/mnt/d/GitRepository/models/run_pdtxt.py'
+ outputting to '/mnt/d/GitRepository/models/run_pdtxt_v2.py'
+--------------------------------------------------------------------------------
+
+2:5: INFO: Renamed 'tf.Session' to 'tf.compat.v1.Session'
+4:20: INFO: Renamed 'tf.GraphDef' to 'tf.compat.v1.GraphDef'
+--------------------------------------------------------------------------------
+
