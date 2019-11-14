@@ -372,6 +372,16 @@ def run_customized_training_loop(
 
             def _run_callbacks_on_batch_end(batch):
                 """Runs custom callbacks at the end of every step."""
+                s = time.time()
+                _save_checkpoint(checkpoint, model_dir, checkpoint_name.format(step=batch))
+                e1 = time.time()
+                for var in model.trainable_variables:
+                    var.assign(tf.zeros(shape=var.shape, dtype=var.dtype))
+                e2 = time.time()
+                checkpoint.restore(tf.train.latest_checkpoint(model_dir))
+                e3 = time.time()
+                logging.info('[Important] save:%.2f clear:%.2f restore:%.2f total:%.2f', e1-s, e2-e1, e3-e2, e3-s)
+
                 if not custom_callbacks:
                     return
                 for callback in custom_callbacks:
@@ -415,6 +425,7 @@ def run_customized_training_loop(
                     # Converts steps to a Tensor to avoid tf.function retracing.
                     train_steps(train_iterator,
                                 tf.convert_to_tensor(steps, dtype=tf.int32))
+                # _run_callbacks_on_batch_end(current_step)
                 _run_callbacks_on_batch_end(current_step)
                 current_step += steps
 
@@ -436,6 +447,7 @@ def run_customized_training_loop(
                         train_summary_writer.flush()
                 # current_step_time = time.time()
                 current_step_time = datetime.utcnow()
+                training_status += ' Current Step Time: ' + str(current_step_time - last_step_time)
                 estimated_time = (current_step_time - last_step_time) * (total_training_steps - current_step) + \
                                  current_step_time
                 training_status += ' Estimated End Time: ' + str(estimated_time.astimezone(timezone(timedelta(hours=8))))
@@ -447,16 +459,17 @@ def run_customized_training_loop(
                     # To avoid repeated model saving, we do not save after the last
                     # step of training.
                     if current_step < total_training_steps:
+                        pass
                         # MARKS
                         # _save_checkpoint(checkpoint, model_dir,
                         #                  checkpoint_name.format(step=current_step))
-                        logging.info('server parameter size: %d', sys.getsizeof(model.trainable_variables))
-                        grpc_push(model.trainable_variables)
-                        grpc_clear(model.trainable_variables)
-                        start_time = time.time()
-                        grpc_pull(model.trainable_variables)
-                        end_time = time.time()
-                        logging.info('Restoring time: %f', end_time - start_time)
+                        # logging.info('server parameter size: %d', sys.getsizeof(model.trainable_variables))
+                        # grpc_push(model.trainable_variables)
+                        # grpc_clear(model.trainable_variables)
+                        # start_time = time.time()
+                        # grpc_pull(model.trainable_variables)
+                        # end_time = time.time()
+                        # logging.info('Restoring time: %f', end_time - start_time)
 
                     if eval_input_fn:
                         logging.info('Running evaluation after step: %s.', current_step)
