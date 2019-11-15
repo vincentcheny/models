@@ -23,6 +23,7 @@ import json
 import math
 import six
 import tensorflow as tf
+import logging
 
 
 class BertConfig(object):
@@ -113,8 +114,10 @@ def get_bert_model(input_word_ids,
                    float_type=tf.float32):
   """Wraps the core BERT model as a keras.Model."""
   bert_model_layer = BertModel(config=config, float_type=float_type, name=name)
+  logging.info("before bert model layer")
   pooled_output, sequence_output = bert_model_layer(input_word_ids, input_mask,
                                                     input_type_ids)
+  logging.info("after bert model layer")
   bert_model = tf.keras.Model(
       inputs=[input_word_ids, input_mask, input_type_ids],
       outputs=[pooled_output, sequence_output])
@@ -209,7 +212,6 @@ class BertModel(tf.keras.layers.Layer):
     input_word_ids = unpacked_inputs[0]
     input_mask = unpacked_inputs[1]
     input_type_ids = unpacked_inputs[2]
-
     word_embeddings = self.embedding_lookup(input_word_ids)
     embedding_tensor = self.embedding_postprocessor(
         word_embeddings=word_embeddings, token_type_ids=input_type_ids)
@@ -219,15 +221,12 @@ class BertModel(tf.keras.layers.Layer):
     if input_mask is not None:
       attention_mask = create_attention_mask_from_input_mask(
           input_word_ids, input_mask)
-
     if mode == "encoder":
       return self.encoder(
           embedding_tensor, attention_mask, return_all_layers=True)
-
     sequence_output = self.encoder(embedding_tensor, attention_mask)
     first_token_tensor = tf.squeeze(sequence_output[:, 0:1, :], axis=1)
     pooled_output = self.pooler_transform(first_token_tensor)
-
     return (pooled_output, sequence_output)
 
   def get_config(self):
@@ -245,6 +244,7 @@ class EmbeddingLookup(tf.keras.layers.Layer):
                initializer_range=0.02,
                **kwargs):
     super(EmbeddingLookup, self).__init__(**kwargs)
+
     self.vocab_size = vocab_size
     self.embedding_size = embedding_size
     self.initializer_range = initializer_range

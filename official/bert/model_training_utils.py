@@ -33,6 +33,7 @@ from absl import logging
 import tensorflow as tf
 from official.utils.misc import distribution_utils
 from official.utils.misc import tpu_lib
+from tensorflow.python.training import savercuhk
 
 _SUMMARY_TXT = 'training_summary.txt'
 _MIN_SUMMARY_STEPS = 1
@@ -193,7 +194,6 @@ def run_customized_training_loop(
           attribute or when required parameters are set to none. (2) eval args are
           not specified correctly. (3) metric_fn must be a callable if specified.
     """
-
     if _sentinel is not None:
         raise ValueError('only call `run_customized_training_loop()` '
                          'with named arguments.')
@@ -212,7 +212,6 @@ def run_customized_training_loop(
             ' steps_per_loop.', steps_per_loop, steps_per_epoch)
         steps_per_loop = steps_per_epoch
     assert tf.executing_eagerly()
-
     if run_eagerly:
         if steps_per_loop > 1:
             raise ValueError(
@@ -232,29 +231,31 @@ def run_customized_training_loop(
             'if `metric_fn` is specified, metric_fn must be a callable.')
 
     total_training_steps = steps_per_epoch * epochs
-
     # To reduce unnecessary send/receive input pipeline operation, we place input
     # pipeline ops in worker task.
     with tf.device(tpu_lib.get_primary_cpu_task(use_remote_tpu)):
         train_iterator = _get_input_iterator(train_input_fn, strategy)
-
         with distribution_utils.get_strategy_scope(strategy):
             # To correctly place the model weights on accelerators,
             # model and optimizer should be created in scope.
+            logging.info("before model_fn()")
             model, sub_model = model_fn()
+            logging.info("after model_fn()")
             if not hasattr(model, 'optimizer'):
                 raise ValueError('User should set optimizer attribute to model '
                                  'inside `model_fn`.')
             optimizer = model.optimizer
             use_float16 = isinstance(
                 optimizer, tf.keras.mixed_precision.experimental.LossScaleOptimizer)
-
+            logging.info("[important]")
+            logging.info(init_checkpoint)
             if init_checkpoint:
                 logging.info(
                     'Checkpoint file %s found and restoring from '
                     'initial checkpoint for core model.', init_checkpoint)
                 checkpoint = tf.train.Checkpoint(model=sub_model)
-                checkpoint.restore(init_checkpoint).assert_consumed()
+                # checkpoint.restore(init_checkpoint).assert_consumed()
+                checkpoint.restore(tf.train.latest_checkpoint(model_dir))
                 logging.info('Loading from checkpoint file completed')
 
             train_loss_metric = tf.keras.metrics.Mean(
@@ -481,13 +482,13 @@ def run_customized_training_loop(
             # MARKS
             # _save_checkpoint(checkpoint, model_dir,
             #                  checkpoint_name.format(step=current_step))
-            logging.info('server parameter size: %d', sys.getsizeof(model.trainable_variables))
-            grpc_push(model.trainable_variables)
-            grpc_clear(model.trainable_variables)
-            start_time = time.time()
-            grpc_pull(model.trainable_variables)
-            end_time = time.time()
-            logging.info('Restoring time: %f', end_time - start_time)
+            # logging.info('server parameter size: %d', sys.getsizeof(model.trainable_variables))
+            # grpc_push(model.trainable_variables)
+            # grpc_clear(model.trainable_variables)
+            # start_time = time.time()
+            # grpc_pull(model.trainable_variables)
+            # end_time = time.time()
+            # logging.info('Restoring time: %f', end_time - start_time)
 
             if eval_input_fn:
                 logging.info('Running final evaluation after training is complete.')

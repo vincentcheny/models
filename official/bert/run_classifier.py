@@ -22,6 +22,7 @@ import functools
 import json
 import math
 import os
+import sys
 
 from absl import app
 from absl import flags
@@ -38,6 +39,7 @@ from official.bert import modeling
 from official.bert import optimization
 from official.utils.misc import keras_utils
 from official.utils.misc import tpu_lib
+from tensorflow.python.training.savercuhk_context import Context
 
 flags.DEFINE_enum(
     'mode', 'train_and_eval', ['train_and_eval', 'export_only'],
@@ -243,14 +245,19 @@ def main(_):
         cluster_resolver = tpu_lib.tpu_initialize(FLAGS.tpu)
         strategy = tf.distribute.experimental.TPUStrategy(cluster_resolver)
     elif FLAGS.strategy_type == 'multi_worker_mirror':
+        workers = ["localhost:2001", "localhost:2002"]
+        task_index = int(sys.argv[1])
         os.environ['TF_CONFIG'] = json.dumps({
             'cluster': {
                 # 'worker': ["b10g4.bigc.dbg.private:2001", "b10g5.bigc.dbg.private:2002"]
-                'worker': ["localhost:2001", "localhost:2002"]
+                'worker': workers
             },
-            'task': {'type': 'worker', 'index': 0}
+            'task': {'type': 'worker', 'index': task_index}
         })
         strategy = tf.distribute.experimental.MultiWorkerMirroredStrategy()
+        Context.init_context(len(workers), task_index)
+        logging.info(Context.get_is_init)
+        logging.info(Context.get_num_task)
     else:
         raise ValueError('The distribution strategy type is not supported: %s' %
                          FLAGS.strategy_type)

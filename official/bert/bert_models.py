@@ -22,6 +22,7 @@ import copy
 import tensorflow as tf
 
 from official.bert import modeling
+import logging
 
 
 def gather_indexes(sequence_tensor, positions):
@@ -410,12 +411,12 @@ def classifier_model(bert_config,
       config=bert_config,
       float_type=float_type)
   pooled_output = bert_model.outputs[0]
+
   if final_layer_initializer is not None:
     initializer = final_layer_initializer
   else:
     initializer = tf.keras.initializers.TruncatedNormal(
         stddev=bert_config.initializer_range)
-
   output = tf.keras.layers.Dropout(rate=bert_config.hidden_dropout_prob)(
       pooled_output)
   output = tf.keras.layers.Dense(

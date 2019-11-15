@@ -1,15 +1,6 @@
 #!/bin/bash 
-
-export PYTHONPATH=/home/user/tf-training/models
-export GLUE_DIR=/home/user/tf-training/glue_data
-export BERT_BASE_DIR=/home/user/tf-training/uncased_L-12_H-768_A-12
-export OUTPUT_DIR=/home/user/tf-training/datasets
-export TASK_NAME=MRPC
-export DATASETS_DIR=/home/user/tf-training/datasets
-export MODEL_DIR=/home/user/tf-training/results
-export TASK=MRPC
-
 python ./official/bert/run_classifier.py \
+       0 \
        --mode='train_and_eval' \
        --input_meta_data_path=${DATASETS_DIR}/${TASK}_meta_data \
        --train_data_path=${DATASETS_DIR}/${TASK}_train.tf_record \
