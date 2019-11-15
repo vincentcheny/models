@@ -29,6 +29,8 @@ from absl import logging
 import tensorflow as tf
 
 # pylint: disable=g-import-not-at-top,redefined-outer-name,reimported
+from tensorflow_core.python.training.savercuhk_context import Context
+
 from official.modeling import model_training_utils
 from official.nlp import bert_modeling as modeling
 from official.nlp import bert_models
@@ -56,6 +58,8 @@ flags.DEFINE_string(
     'to be used for training and evaluation.')
 flags.DEFINE_integer('train_batch_size', 32, 'Batch size for training.')
 flags.DEFINE_integer('eval_batch_size', 32, 'Batch size for evaluation.')
+flags.DEFINE_string('node_list', "[]", 'node list')
+flags.DEFINE_integer('task_index', 0, 'Task index')
 flags.DEFINE_string(
     'hub_module_url', None, 'TF-Hub path/url to Bert module. '
     'If specified, init_checkpoint flag should not be used.')
@@ -63,7 +67,6 @@ flags.DEFINE_string(
 common_flags.define_common_bert_flags()
 
 FLAGS = flags.FLAGS
-
 
 def get_loss_fn(num_classes, loss_factor=1.0):
   """Gets the classification loss function."""
@@ -308,6 +311,19 @@ def main(_):
   elif FLAGS.strategy_type == 'tpu':
     cluster_resolver = tpu_lib.tpu_initialize(FLAGS.tpu)
     strategy = tf.distribute.experimental.TPUStrategy(cluster_resolver)
+  elif FLAGS.strategy_type == 'multi_worker_mirror':
+
+      workers = eval(FLAGS.node_list)
+      task_index = int(FLAGS.task_index)
+      Context.init_context(len(workers), task_index)
+
+      os.environ['TF_CONFIG'] = json.dumps({
+          'cluster': {
+              'worker': workers
+          },
+          'task': {'type': 'worker', 'index': task_index}
+      })
+      strategy = tf.distribute.experimental.MultiWorkerMirroredStrategy()
   else:
     raise ValueError('The distribution strategy type is not supported: %s' %
                      FLAGS.strategy_type)
