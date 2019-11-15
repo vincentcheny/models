@@ -56,6 +56,9 @@ flags.DEFINE_string(
     'to be used for training and evaluation.')
 flags.DEFINE_integer('train_batch_size', 32, 'Batch size for training.')
 flags.DEFINE_integer('eval_batch_size', 32, 'Batch size for evaluation.')
+flags.DEFINE_string('node_list', "[]", 'node list')
+flags.DEFINE_integer('task_index', 0, 'Task index')
+
 
 common_flags.define_common_bert_flags()
 
@@ -245,10 +248,9 @@ def main(_):
     elif FLAGS.strategy_type == 'multi_worker_mirror':
         os.environ['TF_CONFIG'] = json.dumps({
             'cluster': {
-                # 'worker': ["b10g4.bigc.dbg.private:2001", "b10g5.bigc.dbg.private:2002"]
-                'worker': ["localhost:2001", "localhost:2002"]
+                'worker': eval(FLAGS.node_list)
             },
-            'task': {'type': 'worker', 'index': 0}
+            'task': {'type': 'worker', 'index': FLAGS.task_index}
         })
         strategy = tf.distribute.experimental.MultiWorkerMirroredStrategy()
     else:
