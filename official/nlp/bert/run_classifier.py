@@ -28,7 +28,6 @@ from absl import flags
 from absl import logging
 import tensorflow as tf
 
-# pylint: disable=g-import-not-at-top,redefined-outer-name,reimported
 from tensorflow_core.python.training.savercuhk_context import Context
 
 from official.modeling import model_training_utils
@@ -315,7 +314,7 @@ def main(_):
 
       workers = eval(FLAGS.node_list)
       task_index = int(FLAGS.task_index)
-      Context.init_context(len(workers), task_index)
+      tf.train.TFTunerContext.init_context(len(workers), task_index)
 
       os.environ['TF_CONFIG'] = json.dumps({
           'cluster': {
@@ -327,6 +326,7 @@ def main(_):
   else:
     raise ValueError('The distribution strategy type is not supported: %s' %
                      FLAGS.strategy_type)
+
   run_bert(strategy, input_meta_data)
 
 
