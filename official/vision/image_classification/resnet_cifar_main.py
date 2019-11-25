@@ -21,6 +21,7 @@ from __future__ import print_function
 import json
 import os
 import sys
+import pysnooper
 
 import tensorflow as tf
 from absl import app as absl_app
@@ -184,9 +185,8 @@ def run(flags_obj):
                          if flags_obj.report_accuracy_metrics else None),
                 run_eagerly=flags_obj.run_eagerly)
 
-    # callbacks = [common.get_callbacks(learning_rate_schedule, cifar_preprocessing.NUM_IMAGES['train']),
-    #              tf.keras.callbacks.ModelCheckpoint(filepath='./tmp/keras-ckpt')]
-    callbacks = [tf.keras.callbacks.ModelCheckpoint(filepath='./tmp/keras-ckpt')]
+    callbacks = common.get_callbacks(learning_rate_schedule, cifar_preprocessing.NUM_IMAGES['train'])
+    # callbacks = [tf.keras.callbacks.ModelCheckpoint(filepath='./tmp/keras-ckpt')]
 
     train_steps = cifar_preprocessing.NUM_IMAGES['train'] // flags_obj.batch_size
     train_epochs = flags_obj.train_epochs
@@ -213,14 +213,15 @@ def run(flags_obj):
         no_dist_strat_device = tf.device('/device:GPU:0')
         no_dist_strat_device.__enter__()
 
-    history = model.fit(train_input_dataset,
-                        epochs=train_epochs,
-                        steps_per_epoch=train_steps,
-                        callbacks=callbacks,
-                        validation_steps=num_eval_steps,
-                        validation_data=validation_data,
-                        validation_freq=flags_obj.epochs_between_evals,
-                        verbose=2)
+    with pysnooper.snoop('./log/file.log', depth=20):
+        history = model.fit(train_input_dataset,
+                            epochs=train_epochs,
+                            steps_per_epoch=train_steps,
+                            callbacks=callbacks,
+                            validation_steps=num_eval_steps,
+                            validation_data=validation_data,
+                            validation_freq=flags_obj.epochs_between_evals,
+                            verbose=2)
     eval_output = None
     if not flags_obj.skip_eval:
         eval_output = model.evaluate(eval_input_dataset,
