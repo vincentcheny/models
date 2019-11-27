@@ -213,15 +213,15 @@ def run(flags_obj):
         no_dist_strat_device = tf.device('/device:GPU:0')
         no_dist_strat_device.__enter__()
 
-    with pysnooper.snoop('./log/file.log', depth=20):
-        history = model.fit(train_input_dataset,
-                            epochs=train_epochs,
-                            steps_per_epoch=train_steps,
-                            callbacks=callbacks,
-                            validation_steps=num_eval_steps,
-                            validation_data=validation_data,
-                            validation_freq=flags_obj.epochs_between_evals,
-                            verbose=2)
+    # with pysnooper.snoop('./log/file.log', depth=20):
+    history = model.fit(train_input_dataset,
+                        epochs=train_epochs,
+                        steps_per_epoch=train_steps,
+                        callbacks=callbacks,
+                        validation_steps=num_eval_steps,
+                        validation_data=validation_data,
+                        validation_freq=flags_obj.epochs_between_evals,
+                        verbose=2)
     eval_output = None
     if not flags_obj.skip_eval:
         eval_output = model.evaluate(eval_input_dataset,
