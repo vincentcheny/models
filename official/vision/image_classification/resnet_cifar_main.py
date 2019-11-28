@@ -35,6 +35,8 @@ from official.vision.image_classification import cifar_preprocessing
 from official.vision.image_classification import common
 from official.vision.image_classification import resnet_cifar_model
 
+from tensorflow.python.training.savercuhk_context import TFTunerContext
+
 LR_SCHEDULE = [  # (multiplier, epoch to start) tuples
     (0.1, 91), (0.01, 136), (0.001, 182)
 ]
@@ -103,6 +105,7 @@ def run(flags_obj):
 
     workers = ["localhost:2001", "localhost:2002"]
     task_index = int(sys.argv[1])
+    TFTunerContext.init_context(len(workers), task_index)
     os.environ['TF_CONFIG'] = json.dumps({
         'cluster': {
             # 'worker': ["b10g4.bigc.dbg.private:2001", "b10g5.bigc.dbg.private:2002"]
@@ -186,7 +189,8 @@ def run(flags_obj):
                 run_eagerly=flags_obj.run_eagerly)
 
     callbacks = common.get_callbacks(learning_rate_schedule, cifar_preprocessing.NUM_IMAGES['train'])
-    # callbacks = [tf.keras.callbacks.ModelCheckpoint(filepath='./tmp/keras-ckpt')]
+    # checkpoint = tf.train.Checkpoint(optimizer=optimizer, model=model)
+    callbacks.append(tf.keras.callbacks.ModelCheckpoint(filepath='./tmp/keras-ckpt{epoch}', verbose=1, save_weights_only=True))
 
     train_steps = cifar_preprocessing.NUM_IMAGES['train'] // flags_obj.batch_size
     train_epochs = flags_obj.train_epochs
@@ -212,6 +216,14 @@ def run(flags_obj):
         # when not using distribition strategy.
         no_dist_strat_device = tf.device('/device:GPU:0')
         no_dist_strat_device.__enter__()
+
+    ckpt = tf.train.Checkpoint(step=tf.Variable(1), optimizer=optimizer)
+    manager = tf.train.CheckpointManager(ckpt, './tmp', max_to_keep=3)
+    if manager.latest_checkpoint:
+        ckpt.restore(manager.latest_checkpoint)
+        print("latest_checkpoint: {}".format(manager.latest_checkpoint))
+    else:
+        print("Initializing from scratch.")
 
     # with pysnooper.snoop('./log/file.log', depth=20):
     history = model.fit(train_input_dataset,

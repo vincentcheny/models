@@ -234,7 +234,8 @@ def get_callbacks(learning_rate_schedule_fn=None, num_images=None):
             FLAGS.enable_tensorboard)
         callbacks.append(profiler_callback)
 
-    callbacks.append(tf.keras.callbacks.ModelCheckpoint(filepath='./tmp/keras-ckpt', verbose=1))
+    # callbacks.append(tf.keras.callbacks.ModelCheckpoint(filepath='./tmp/keras-ckpt',
+    #                                                     verbose=1, save_weights_only=True))
     return callbacks
 
 
