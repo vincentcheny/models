@@ -11,13 +11,13 @@ then
     export TASK=MRPC
 elif [ "$1" == "server" ]
 then
-    export PYTHONPATH=/home/chen.yu/models
-    export GLUE_DIR=/home/chen.yu/glue_data
-    export BERT_BASE_DIR=/home/chen.yu/uncased_L-12_H-768_A-12
-    export OUTPUT_DIR=/home/chen.yu/datasets
+    export PYTHONPATH=/home/chen.yu/bert/models
+    export GLUE_DIR=/home/chen.yu/bert/glue_data
+    export BERT_BASE_DIR=/home/chen.yu/bert/uncased_L-12_H-768_A-12
+    export OUTPUT_DIR=/home/chen.yu/bert/datasets
     export TASK_NAME=MRPC
-    export DATASETS_DIR=/home/chen.yu/datasets
-    export MODEL_DIR=/home/chen.yu/results
+    export DATASETS_DIR=/home/chen.yu/bert/datasets
+    export MODEL_DIR=/home/chen.yu/bert/results
     export TASK=MRPC
 else
     echo "Usage: . addExportPath.sh [local|server]"
