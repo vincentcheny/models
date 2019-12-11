@@ -28,8 +28,6 @@ from absl import flags
 from absl import logging
 import tensorflow as tf
 
-from tensorflow_core.python.training.savercuhk_context import Context
-
 from official.modeling import model_training_utils
 from official.nlp import bert_modeling as modeling
 from official.nlp import bert_models
