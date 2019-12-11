@@ -189,6 +189,7 @@ def run(flags_obj):
                 run_eagerly=flags_obj.run_eagerly)
 
     callbacks = common.get_callbacks(learning_rate_schedule, cifar_preprocessing.NUM_IMAGES['train'])
+    # checkpoint = tf.train.Checkpoint(optimizer=optimizer, model=model)
     callbacks.append(tf.keras.callbacks.ModelCheckpoint(filepath='./tmp/keras-ckpt{epoch}', verbose=1, save_weights_only=True))
 
     train_steps = cifar_preprocessing.NUM_IMAGES['train'] // flags_obj.batch_size
@@ -215,6 +216,14 @@ def run(flags_obj):
         # when not using distribition strategy.
         no_dist_strat_device = tf.device('/device:GPU:0')
         no_dist_strat_device.__enter__()
+
+    ckpt = tf.train.Checkpoint(step=tf.Variable(1), optimizer=optimizer)
+    manager = tf.train.CheckpointManager(ckpt, './tmp', max_to_keep=3)
+    if manager.latest_checkpoint:
+        ckpt.restore(manager.latest_checkpoint)
+        print("latest_checkpoint: {}".format(manager.latest_checkpoint))
+    else:
+        print("Initializing from scratch.")
 
     # with pysnooper.snoop('./log/file.log', depth=20):
     history = model.fit(train_input_dataset,
