@@ -103,13 +103,14 @@ def run(flags_obj):
                        if tf.test.is_built_with_cuda() else 'channels_last')
     tf.keras.backend.set_image_data_format(data_format)
 
-    workers = ["localhost:2001", "localhost:2002"]
-    task_index = int(sys.argv[1])
-    TFTunerContext.init_context(len(workers), task_index)
+    # workers = ["localhost:2001", "localhost:2002"]
+    worker = flags_obj.worker
+    task_index = flags_obj.task_index
+    TFTunerContext.init_context(len(worker), task_index)
     os.environ['TF_CONFIG'] = json.dumps({
         'cluster': {
             # 'worker': ["b10g4.bigc.dbg.private:2001", "b10g5.bigc.dbg.private:2002"]
-            'worker': workers
+            'worker': worker
         },
         'task': {'type': 'worker', 'index': task_index}
     })
@@ -218,7 +219,7 @@ def run(flags_obj):
         no_dist_strat_device.__enter__()
 
     ckpt = tf.train.Checkpoint(step=tf.Variable(1), optimizer=optimizer)
-    manager = tf.train.CheckpointManager(ckpt, './tmp', max_to_keep=3)
+    manager = tf.train.CheckpointManager(ckpt, flags_obj.model_dir, max_to_keep=3)
     if manager.latest_checkpoint:
         ckpt.restore(manager.latest_checkpoint)
         print("latest_checkpoint: {}".format(manager.latest_checkpoint))
