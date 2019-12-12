@@ -103,16 +103,14 @@ def run(flags_obj):
                        if tf.test.is_built_with_cuda() else 'channels_last')
     tf.keras.backend.set_image_data_format(data_format)
 
-    # workers = ["localhost:2001", "localhost:2002"]
-    worker = flags_obj.worker
-    task_index = flags_obj.task_index
-    TFTunerContext.init_context(len(worker), task_index)
+    worker = flags_obj.worker.split(',')
+    TFTunerContext.init_context(len(worker), flags_obj.task_index)
     os.environ['TF_CONFIG'] = json.dumps({
         'cluster': {
             # 'worker': ["b10g4.bigc.dbg.private:2001", "b10g5.bigc.dbg.private:2002"]
             'worker': worker
         },
-        'task': {'type': 'worker', 'index': task_index}
+        'task': {'type': 'worker', 'index': flags_obj.task_index}
     })
 
     strategy = distribution_utils.get_distribution_strategy(

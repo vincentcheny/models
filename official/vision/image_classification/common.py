@@ -364,6 +364,7 @@ def define_keras_flags(dynamic_loss_scale=True):
         help='Number of steps per graph-mode loop. Only training step happens '
              'inside the loop. Callbacks will not be called inside. Will be capped at '
              'steps per epoch.')
+    flags.DEFINE_string('worker', None, 'specify workers in the cluster')
 
 
 def get_synth_input_fn(height, width, num_channels, num_classes,
