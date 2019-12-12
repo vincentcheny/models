@@ -224,7 +224,7 @@ def get_callbacks(learning_rate_schedule_fn=None, num_images=None):
 
     if FLAGS.enable_tensorboard:
         tensorboard_callback = tf.keras.callbacks.TensorBoard(
-            log_dir=FLAGS.model_dir)
+            log_dir=FLAGS.model_dir, update_freq='batch')
         callbacks.append(tensorboard_callback)
 
     if FLAGS.profile_steps:

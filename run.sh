@@ -19,12 +19,13 @@ then
     --task_index=0
 elif [ "$1" == "resnet" ]
 then
-    python official/resnet_cifar_main.py \
+    python official/vision/image_classification/resnet_cifar_main.py \
+      --enable_tensorboard=True \
       --enable_eager=false \
-      --train_steps=50 \
+      --train_steps=10 \
       --train_epochs=10 \
       --distribution_strategy=multi_worker_mirrored \
-      --data_dir=../../../../cifar-10-batches-bin \
+      --data_dir=/home/chen.yu/bert/cifar-10-batches-bin \
       --model_dir=hdfs://b10g1:8020/user/root/tftuner \
       --worker=b10g4.bigc.dbg.private:2001,b10g6.bigc.dbg.private:2002 \
       --task_index 0

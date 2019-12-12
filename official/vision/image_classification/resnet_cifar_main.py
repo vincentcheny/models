@@ -189,7 +189,16 @@ def run(flags_obj):
 
     callbacks = common.get_callbacks(learning_rate_schedule, cifar_preprocessing.NUM_IMAGES['train'])
     # checkpoint = tf.train.Checkpoint(optimizer=optimizer, model=model)
-    callbacks.append(tf.keras.callbacks.ModelCheckpoint(filepath='./tmp/keras-ckpt{epoch}', verbose=1, save_weights_only=True))
+    callbacks.append(tf.keras.callbacks.ModelCheckpoint(filepath=flags_obj.model_dir+'/tmp/keras-ckpt{epoch}', verbose=1, save_weights_only=True))
+
+    class LossHistory(tf.keras.callbacks.Callback):
+        def on_batch_end(self, batch, logs={}):
+            tf.summary.scalar('batch loss', data=logs.get('loss'), step=batch)
+            print("Loss for step %d:%d", batch, logs.get('loss'))
+
+    callbacks.append(LossHistory())
+    file_writer = tf.summary.create_file_writer(flags_obj.model_dir+"/metrics")
+    file_writer.set_as_default()
 
     train_steps = cifar_preprocessing.NUM_IMAGES['train'] // flags_obj.batch_size
     train_epochs = flags_obj.train_epochs
