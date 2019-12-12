@@ -13,7 +13,7 @@ elif [ "$1" == "server" ]
 then
     export PYTHONPATH=/home/chen.yu/bert/models
     export GLUE_DIR=/home/chen.yu/bert/glue_data
-    export BERT_BASE_DIR=/home/chen.yu/bert/uncased_L-12_H-768_A-12
+    export BERT_BASE_DIR=/home/chen.yu/bert/uncased_L-24_H-1024_A-16
     export OUTPUT_DIR=/home/chen.yu/bert/datasets
     export TASK_NAME=MRPC
     export DATASETS_DIR=/home/chen.yu/bert/datasets

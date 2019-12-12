@@ -265,6 +265,7 @@ def run_bert(strategy, input_meta_data):
   epochs = FLAGS.num_train_epochs
   train_data_size = input_meta_data['train_data_size']
   steps_per_epoch = int(train_data_size / FLAGS.train_batch_size)
+  print("[Important]steps_per_epoch:",steps_per_epoch)
   warmup_steps = int(epochs * train_data_size * 0.1 / FLAGS.train_batch_size)
   eval_steps = int(
       math.ceil(input_meta_data['eval_data_size'] / FLAGS.eval_batch_size))

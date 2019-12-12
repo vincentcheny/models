@@ -21,13 +21,14 @@ from __future__ import print_function
 import json
 import os
 
+import time
 from absl import logging
 import tensorflow as tf
 from official.utils.misc import distribution_utils
 from official.utils.misc import tpu_lib
 
 _SUMMARY_TXT = 'training_summary.txt'
-_MIN_SUMMARY_STEPS = 10
+_MIN_SUMMARY_STEPS = 1
 
 
 def _save_checkpoint(checkpoint, model_dir, checkpoint_prefix):
@@ -325,6 +326,11 @@ def run_customized_training_loop(
 
     def _run_callbacks_on_batch_end(batch):
       """Runs custom callbacks at the end of every step."""
+      if batch % 100 == 0:
+        s = time.time()
+        _save_checkpoint(checkpoint, model_dir, checkpoint_name.format(step=batch))
+        e1 = time.time()
+        logging.info('[Important] Checkpoint Time for step %d: %.2f', batch, e1-s)
       if not custom_callbacks:
         return
       for callback in custom_callbacks:
