@@ -33,6 +33,10 @@ from official.utils.misc import model_helpers
 from official.vision.image_classification.resnet import common
 from official.vision.image_classification.resnet import imagenet_preprocessing
 from official.vision.image_classification.resnet import resnet_runnable
+import os
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
+import nni
+
 
 flags.DEFINE_boolean(name='use_tf_function', default=True,
                      help='Wrap the train and test step inside a '
@@ -187,10 +191,37 @@ def run(flags_obj):
 def main(_):
   model_helpers.apply_clean(flags.FLAGS)
   stats = run(flags.FLAGS)
-  logging.info('Run stats:\n%s', stats)
+  nni.report_final_result(stats['train_acc'])
+  tf.compat.v1.logging.info('Run stats:\n%s', stats)
+
+
+def get_default_params():
+	return {
+        "BATCH_SIZE": 10,
+        "LEARNING_RATE": 1e-4,
+        'NUM_EPOCH': 2,
+        "DROP_OUT":0.3,
+        "DENSE_UNIT":128,
+        "inter_op_parallelism_threads": 1,
+        "intra_op_parallelism_threads": 2,
+        "max_folded_constant": 6,
+        "build_cost_model": 4,
+        "do_common_subexpression_elimination": 1,
+        "do_function_inlining": 1,
+        "global_jit_level": 1,
+        "infer_shapes": 1,
+        "place_pruned_graph": 1,
+        "enable_bfloat16_sendrecv": 1
+    }
 
 
 if __name__ == '__main__':
   logging.set_verbosity(logging.INFO)
+  tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.INFO)
+  physical_devices = tf.config.list_physical_devices('GPU')
+  tf.config.experimental.set_memory_growth(physical_devices[0], True)
   common.define_keras_flags()
+  params = get_default_params()
+  tuned_params = nni.get_next_parameter()
+  params.update(tuned_params)
   app.run(main)
