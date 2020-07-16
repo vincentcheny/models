@@ -78,7 +78,7 @@ def build_stats(runnable, time_callback):
 def get_num_train_iterations(flags_obj):
   """Returns the number of training steps, train and test epochs."""
   train_steps = (
-      imagenet_preprocessing.NUM_IMAGES['train'] // flags_obj.batch_size)
+      imagenet_preprocessing.NUM_IMAGES['train'] // params['BATCH_SIZE'])
   train_epochs = flags_obj.train_epochs
 
   if flags_obj.train_steps:
@@ -86,7 +86,7 @@ def get_num_train_iterations(flags_obj):
     train_epochs = 1
 
   eval_steps = math.ceil(1.0 * imagenet_preprocessing.NUM_IMAGES['validation'] /
-                         flags_obj.batch_size)
+                         params['BATCH_SIZE'])
 
   return train_steps, train_epochs, eval_steps
 
@@ -149,7 +149,8 @@ def run(flags_obj):
       train_epochs * per_epoch_steps, eval_steps)
 
   time_callback = keras_utils.TimeHistory(
-      flags_obj.batch_size,
+      #flags_obj.batch_size,
+      params['BATCH_SIZE'],
       flags_obj.log_steps,
       logdir=flags_obj.model_dir if flags_obj.enable_tensorboard else None)
   with distribution_utils.get_strategy_scope(strategy):
@@ -197,7 +198,7 @@ def main(_):
 
 def get_default_params():
 	return {
-        "BATCH_SIZE": 10,
+        "BATCH_SIZE": 256,
         "LEARNING_RATE": 1e-4,
         'NUM_EPOCH': 2,
         "DROP_OUT":0.3,
@@ -220,6 +221,9 @@ if __name__ == '__main__':
   tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.INFO)
   physical_devices = tf.config.list_physical_devices('GPU')
   tf.config.experimental.set_memory_growth(physical_devices[0], True)
+  # tf.config.experimental.set_memory_growth(physical_devices[1], True)
+  # tf.config.experimental.set_memory_growth(physical_devices[2], True)
+  # tf.config.experimental.set_memory_growth(physical_devices[3], True)
   common.define_keras_flags()
   params = get_default_params()
   tuned_params = nni.get_next_parameter()

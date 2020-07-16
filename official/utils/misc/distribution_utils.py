@@ -146,6 +146,7 @@ def get_distribution_strategy(distribution_strategy="mirrored",
       devices = ["device:CPU:0"]
     else:
       devices = ["device:GPU:%d" % i for i in range(num_gpus)]
+      # all_reduce_alg = "hierarchical_copy" # extra addition
     return tf.distribute.MirroredStrategy(
         devices=devices,
         cross_device_ops=_mirrored_cross_device_ops(all_reduce_alg, num_packs))
